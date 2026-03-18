@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a2e1c">
+<title>Sync ♡</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a2e1c;-webkit-tap-highlight-color:transparent}
+body{font-family:'Caveat',cursive}
+
+#bg{position:fixed;inset:0;pointer-events:none;z-index:0}
+
+#app{
+  position:relative;z-index:1;
+  width:100vw;height:100dvh;
+  display:flex;flex-direction:column;
+  align-items:center;
+  overflow:hidden;
+}
+
+#hdr{
+  width:100%;display:flex;
+  justify-content:space-between;align-items:center;
+  padding:18px 22px 0;
+  flex-shrink:0;
+}
+#logo{font-size:clamp(30px,8vw,42px);font-weight:700;color:#c8e89a;letter-spacing:.04em}
+#scores{display:flex;gap:6px;align-items:center}
+.sball{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid;font-size:11px;letter-spacing:.06em;line-height:1;gap:2px;
+}
+.sball.p1{border-color:#c8e89a;color:#c8e89a}
+.sball.p2{border-color:#f0c060;color:#f0c060}
+.sball span{font-size:22px;font-weight:700;line-height:1}
+#vs{font-size:16px;color:rgba(255,255,255,.25);padding:0 2px}
+
+#round-badge{
+  margin-top:10px;
+  font-size:13px;letter-spacing:.08em;color:rgba(255,255,255,.35);
+  text-transform:uppercase;flex-shrink:0;
+}
+
+#card-wrap{
+  width:min(100%,500px);padding:0 18px;
+  margin-top:14px;flex-shrink:0;
+}
+#card{
+  background:rgba(255,255,255,.055);
+  border:1.5px solid rgba(255,255,255,.13);
+  border-radius:20px;padding:18px 22px;
+  position:relative;overflow:hidden;
+}
+#card::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    -45deg,
+    transparent,transparent 18px,
+    rgba(255,255,255,.012) 18px,rgba(255,255,255,.012) 19px
+  );
+  pointer-events:none;
+}
+#subject{
+  font-size:clamp(20px,5.5vw,28px);font-weight:600;
+  color:#eef5e4;line-height:1.25;text-align:center;
+  position:relative;z-index:1;
+}
+#exts{
+  display:flex;justify-content:space-between;
+  margin-top:12px;position:relative;z-index:1;
+}
+.ext{font-size:clamp(12px,3.2vw,15px);color:rgba(255,255,255,.4);max-width:44%;line-height:1.2}
+.ext.r{text-align:right}
+
+#arena{
+  width:min(100%,500px);padding:0 18px;
+  margin-top:auto;flex-shrink:0;
+  display:flex;flex-direction:column;gap:22px;
+}
+
+.player-row{display:flex;flex-direction:column;gap:8px}
+.player-label{
+  display:flex;align-items:center;gap:8px;
+  font-size:15px;letter-spacing:.05em;
+}
+.player-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.player-label.p1 .player-dot{background:#c8e89a}
+.player-label.p2 .player-dot{background:#f0c060}
+.player-label.p1{color:rgba(200,232,154,.8)}
+.player-label.p2{color:rgba(240,192,96,.8)}
+.lock-badge{
+  margin-left:auto;font-size:12px;letter-spacing:.06em;
+  padding:3px 10px;border-radius:100px;
+  opacity:0;transition:opacity .3s;
+}
+.lock-badge.p1{background:rgba(200,232,154,.15);color:#c8e89a}
+.lock-badge.p2{background:rgba(240,192,96,.15);color:#f0c060}
+.lock-badge.show{opacity:1}
+
+.track-outer{position:relative;height:52px;display:flex;align-items:center}
+.track{
+  width:100%;height:10px;border-radius:100px;
+  background:rgba(255,255,255,.1);
+  position:relative;cursor:pointer;touch-action:none;
+  transition:opacity .3s;
+}
+.track.disabled{opacity:.35;pointer-events:none}
+.tfill{
+  position:absolute;left:0;top:0;height:100%;border-radius:100px;
+  pointer-events:none;
+}
+.tfill.p1{background:linear-gradient(90deg,rgba(200,232,154,.4),#c8e89a)}
+.tfill.p2{background:linear-gradient(90deg,rgba(240,192,96,.4),#f0c060)}
+.thumb{
+  position:absolute;top:50%;transform:translate(-50%,-50%);
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;font-family:'Caveat',cursive;
+  border:3px solid;pointer-events:none;
+  transition:transform .12s,box-shadow .12s;
+}
+.thumb.p1{background:#2a4a2a;border-color:#c8e89a;color:#c8e89a}
+.thumb.p2{background:#4a3e18;border-color:#f0c060;color:#f0c060}
+.thumb.grab{transform:translate(-50%,-50%) scale(1.18);box-shadow:0 0 0 8px rgba(255,255,255,.1)}
+
+#reveal-screen{
+  width:min(100%,500px);padding:0 18px;
+  display:none;flex-direction:column;align-items:center;gap:18px;
+  margin-top:auto;flex-shrink:0;
+}
+#reveal-screen.show{display:flex}
+
+#cmp-track-wrap{width:100%;position:relative;height:60px;display:flex;align-items:center}
+#cmp-track{
+  width:100%;height:10px;background:rgba(255,255,255,.1);
+  border-radius:100px;position:relative;
+}
+#cmp-gap{
+  position:absolute;top:0;height:100%;border-radius:100px;
+  background:rgba(255,255,255,.15);pointer-events:none;
+}
+.cmp-dot{
+  position:absolute;top:50%;
+  width:36px;height:36px;border-radius:50%;transform:translate(-50%,-50%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;font-family:'Caveat',cursive;
+  border:3px solid;
+  transition:left .5s cubic-bezier(.34,1.56,.64,1);
+}
+#cmp-p1{background:#2a4a2a;border-color:#c8e89a;color:#c8e89a}
+#cmp-p2{background:#4a3e18;border-color:#f0c060;color:#f0c060}
+#cmp-pct{
+  position:absolute;top:calc(50% + 24px);
+  font-size:12px;color:rgba(255,255,255,.3);
+  pointer-events:none;transform:translateX(-50%);
+  transition:left .5s cubic-bezier(.34,1.56,.64,1);
+}
+
+#result-box{
+  background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.12);
+  border-radius:18px;padding:18px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  width:100%;
+}
+#result-emoji{font-size:38px;line-height:1}
+#result-text{font-size:clamp(22px,5.5vw,28px);font-weight:700;color:#eef5e4;text-align:center}
+#result-pts{
+  font-size:clamp(15px,4vw,18px);font-weight:600;
+  padding:6px 18px;border-radius:100px;
+  margin-top:4px;
+}
+#result-sub{font-size:clamp(13px,3.5vw,16px);color:rgba(255,255,255,.4);text-align:center}
+
+#btns{
+  width:min(100%,500px);padding:0 18px;
+  margin-top:18px;margin-bottom:32px;flex-shrink:0;
+  display:flex;gap:10px;
+}
+.btn{
+  flex:1;height:58px;border-radius:16px;border:none;
+  font-family:'Caveat',cursive;font-size:21px;font-weight:700;letter-spacing:.04em;
+  cursor:pointer;transition:transform .1s,opacity .15s;
+}
+.btn:active{transform:scale(.95);opacity:.8}
+#btn-lock{background:#c8e89a;color:#182c18}
+#btn-next{
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);
+  border:1.5px solid rgba(255,255,255,.2);
+  display:none;
+}
+#btn-next.show{display:block}
+
+#phase-label{
+  font-size:clamp(13px,3.5vw,16px);letter-spacing:.06em;
+  color:rgba(255,255,255,.4);text-transform:uppercase;
+  text-align:center;flex-shrink:0;margin-top:10px;
+  min-height:22px;
+}
+
+#score-screen{
+  display:none;position:fixed;inset:0;z-index:10;
+  background:#1a2e1c;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;
+  padding:30px 24px;
+}
+#score-screen.show{display:flex}
+#score-screen h1{font-size:clamp(32px,9vw,52px);color:#c8e89a;font-weight:700;letter-spacing:.04em}
+#final-grid{display:flex;gap:18px;width:min(100%,400px)}
+.final-card{
+  flex:1;background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(255,255,255,.12);
+  border-radius:20px;padding:22px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.final-card .fc-name{font-size:15px;letter-spacing:.06em}
+.final-card .fc-pts{font-size:clamp(42px,11vw,60px);font-weight:700;line-height:1}
+.final-card.p1 .fc-name,.final-card.p1 .fc-pts{color:#c8e89a}
+.final-card.p2 .fc-name,.final-card.p2 .fc-pts{color:#f0c060}
+#btn-restart{
+  margin-top:8px;padding:16px 48px;border-radius:16px;border:none;
+  font-family:'Caveat',cursive;font-size:22px;font-weight:700;letter-spacing:.04em;
+  background:#c8e89a;color:#182c18;cursor:pointer;
+  transition:transform .1s;
+}
+#btn-restart:active{transform:scale(.95)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <svg id="bg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="chalk">
+        <feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="4" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="1.4" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+    <rect width="100%" height="100%" fill="#1a2e1c"/>
+    <text x="3vw"  y="10vh" font-size="clamp(16px,4.5vw,24px)" transform="rotate(-3,3vw,10vh)"  filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".28">∑ A + B = ♡</text>
+    <text x="72vw" y="8vh"  font-size="clamp(14px,4vw,22px)"   transform="rotate(4,72vw,8vh)"   filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".22">∞</text>
+    <text x="1vw"  y="48vh" font-size="clamp(13px,3.5vw,19px)" transform="rotate(-5,1vw,48vh)"  filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".18">lim→♡</text>
+    <text x="80vw" y="42vh" font-size="clamp(12px,3vw,17px)"   transform="rotate(4,80vw,42vh)"  filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".18">A ≈ B</text>
+    <text x="2vw"  y="82vh" font-size="clamp(13px,3.5vw,18px)" transform="rotate(3,2vw,82vh)"   filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".2">∃ x : A(x)=B(x)</text>
+    <text x="75vw" y="88vh" font-size="clamp(12px,3vw,16px)"   transform="rotate(-3,75vw,88vh)" filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".18">sync(A,B)=♡</text>
+    <text x="30vw" y="96vh" font-size="clamp(11px,2.8vw,15px)" transform="rotate(2,30vw,96vh)"  filter="url(#chalk)" font-family="Caveat" fill="white" opacity=".15">A ∩ B = ♡</text>
+  </svg>
+
+  <div id="hdr">
+    <div id="logo">Sync</div>
+    <div id="scores">
+      <div class="sball p1"><span id="sp1">0</span>P1</div>
+      <div id="vs">·</div>
+      <div class="sball p2"><span id="sp2">0</span>P2</div>
+    </div>
+  </div>
+
+  <div id="round-badge">Manche <span id="round-num">1</span> / 8</div>
+
+  <div id="card-wrap">
+    <div id="card">
+      <div id="subject">—</div>
+      <div id="exts">
+        <div class="ext l" id="ext-l">—</div>
+        <div class="ext r" id="ext-r">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="phase-label">● Joueur 1 — glisse et verrouille</div>
+
+  <div id="arena">
+    <div class="player-row">
+      <div class="player-label p1">
+        <div class="player-dot"></div>
+        Joueur 1
+        <div class="lock-badge p1" id="lb1">✓ Verrouillé</div>
+      </div>
+      <div class="track-outer">
+        <div class="track" id="track1">
+          <div class="tfill p1" id="fill1" style="width:50%"></div>
+          <div class="thumb p1" id="thumb1" style="left:50%">A</div>
+        </div>
+      </div>
+    </div>
+    <div class="player-row">
+      <div class="player-label p2">
+        <div class="player-dot"></div>
+        Joueur 2
+        <div class="lock-badge p2" id="lb2">✓ Verrouillé</div>
+      </div>
+      <div class="track-outer">
+        <div class="track disabled" id="track2">
+          <div class="tfill p2" id="fill2" style="width:50%"></div>
+          <div class="thumb p2" id="thumb2" style="left:50%">B</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="reveal-screen">
+    <div id="cmp-track-wrap">
+      <div id="cmp-track">
+        <div id="cmp-gap"></div>
+        <div class="cmp-dot" id="cmp-p1">A</div>
+        <div class="cmp-dot" id="cmp-p2">B</div>
+      </div>
+      <div id="cmp-pct"></div>
+    </div>
+    <div id="result-box">
+      <div id="result-emoji">🎯</div>
+      <div id="result-text">—</div>
+      <div id="result-pts">+0 pts</div>
+      <div id="result-sub">—</div>
+    </div>
+  </div>
+
+  <div id="btns">
+    <button class="btn" id="btn-lock" onclick="lockPhase()">Verrouiller P1</button>
+    <button class="btn" id="btn-next" onclick="nextRound()">Manche suivante →</button>
+  </div>
+
+</div>
+
+<div id="score-screen">
+  <h1>Résultat final</h1>
+  <div id="final-grid">
+    <div class="final-card p1">
+      <div class="fc-name">Joueur 1</div>
+      <div class="fc-pts" id="fp1">0</div>
+    </div>
+    <div class="final-card p2">
+      <div class="fc-name">Joueur 2</div>
+      <div class="fc-pts" id="fp2">0</div>
+    </div>
+  </div>
+  <div id="winner-msg" style="font-size:clamp(16px,4.5vw,22px);color:rgba(255,255,255,.55);text-align:center;max-width:340px;line-height:1.4"></div>
+  <button id="btn-restart" onclick="restartGame()">Rejouer ♡</button>
+</div>
+
+<script>
+const SUBJECTS=[
+  {text:"Tu préfères :",left:"Dire une vérité qui fait mal",right:"Mentir pour éviter un conflit"},
+  {text:"Tu préfères :",left:"Mer",right:"Montagne"},
+  {text:"Tu préfères :",left:"Ne plus jamais pouvoir t'asseoir",right:"Ne plus jamais pouvoir t'allonger"},
+  {text:"Tu préfères :",left:"Tout planifier",right:"Tout improviser"},
+  {text:"Tu préfères :",left:"Pardonner facilement",right:"Couper définitivement"},
+  {text:"Tu préfères :",left:"Être seul tranquille",right:"Toujours entouré"},
+  {text:"Tu préfères :",left:"Envoyer tous tes messages à la mauvaise personne",right:"Recevoir ceux des autres"},
+  {text:"Tu préfères :",left:"Prendre ton temps",right:"Décider rapidement"},
+  {text:"Tu préfères :",left:"Être trop attaché",right:"Ne jamais t'attacher"},
+  {text:"Tu préfères :",left:"Marcher avec un caillou dans la chaussure",right:"Avoir toujours un cheveu dans la bouche"},
+  {text:"Tu préfères :",left:"Été",right:"Hiver"},
+  {text:"Tu préfères :",left:"Répondre direct",right:"Faire attendre exprès"},
+  {text:"Tu préfères :",left:"Ne jamais rire",right:"Avoir un rire insupportable"},
+  {text:"Tu préfères :",left:"Faire confiance",right:"Te méfier"},
+  {text:"Tu préfères :",left:"Grande ville",right:"Petit village"},
+  {text:"Tu préfères :",left:"Tout dire",right:"Rien dire"},
+  {text:"Tu préfères :",left:"Avoir toujours trop chaud",right:"Toujours trop froid"},
+  {text:"Tu préfères :",left:"Quelqu'un de sincère mais brutal",right:"Quelqu'un de doux mais pas honnête"},
+  {text:"Tu préfères :",left:"Sortir",right:"Rester chez toi"},
+  {text:"Tu préfères :",left:"Parler trop fort toute ta vie",right:"Chuchoter tout le temps"},
+  {text:"Tu préfères :",left:"Routine stable",right:"Vie imprévisible"},
+  {text:"Tu préfères :",left:"Confronter",right:"Ignorer"},
+  {text:"Tu préfères :",left:"Silence total",right:"Bruit de fond"},
+  {text:"Tu préfères :",left:"Être compris",right:"Comprendre les autres"},
+  {text:"Tu préfères :",left:"Tomber une fois par jour",right:"Te cogner le petit orteil chaque semaine"},
+  {text:"Tu préfères :",left:"Partir vivre ailleurs",right:"Rester proche de tout ce que tu connais"},
+  {text:"Tu préfères :",left:"Suivre ton instinct",right:"Suivre la logique"},
+  {text:"Tu préfères :",left:"Vivre sans musique",right:"Vivre sans films"},
+  {text:"Tu préfères :",left:"Être admiré",right:"Être respecté"},
+  {text:"Tu préfères :",left:"Écouter de la musique",right:"Regarder des films"},
+  {text:"Tu préfères :",left:"Tenter et te ridiculiser",right:"Ne rien faire et regretter"},
+  {text:"Tu préfères :",left:"Tout contrôler",right:"Lâcher prise"},
+  {text:"Tu préfères :",left:"Avoir raison",right:"Garder quelqu'un"},
+  {text:"Tu préfères :",left:"Regarder le même film toute ta vie",right:"Ne plus jamais regarder de film"},
+  {text:"Tu préfères :",left:"Téléphone toute la journée",right:"Aucun écran pendant une semaine"},
+  {text:"Tu préfères :",left:"Vivre une vie intense",right:"Vivre une vie paisible"},
+  {text:"Tu préfères :",left:"Dépendre de quelqu'un",right:"Être totalement indépendant"},
+  {text:"Tu préfères :",left:"Entendre tes pensées à voix haute",right:"Entendre celles des autres"},
+  {text:"Tu préfères :",left:"Petit comité",right:"Beaucoup de monde"},
+  {text:"Tu préfères :",left:"Régler direct",right:"Laisser le temps"},
+  {text:"Tu préfères :",left:"Prendre un gros risque",right:"Jouer la sécurité toute ta vie"},
+  {text:"Tu préfères :",left:"Lire un livre",right:"Regarder une série"},
+  {text:"Tu préfères :",left:"Être toujours occupé",right:"Avoir beaucoup de temps libre"},
+  {text:"Tu préfères :",left:"Être différent",right:"Te fondre dans la masse"},
+  {text:"Tu préfères :",left:"Revenir en arrière",right:"Voir ton futur"},
+  {text:"Tu préfères :",left:"Avoir beaucoup d'argent",right:"Beaucoup de temps"},
+  {text:"Tu préfères :",left:"Parler beaucoup",right:"Écouter beaucoup"},
+  {text:"Tu préfères :",left:"Être connu de tous",right:"Inconnu mais tranquille"},
+  {text:"Tu préfères :",left:"Rester dans ta zone de confort",right:"Sortir de ta zone"},
+  {text:"Tu préfères :",left:"Travailler seul",right:"En équipe"},
+  {text:"Tu préfères :",left:"Répondre instantanément",right:"Répondre quand t'as envie"},
+  {text:"Tu préfères :",left:"Changer souvent",right:"Rester stable"},
+  {text:"Tu préfères :",left:"Faire du sport",right:"Rester chill"},
+  {text:"Tu préfères :",left:"Une soirée posée",right:"Une soirée mouvementée"},
+];
+
+const MAX=SUBJECTS.length;
+let round=1,phase=1,sP1=0,sP2=0,v1=50,v2=50,dragging=null,used=[];
+
+const $=id=>document.getElementById(id);
+
+function pick(){
+  if(used.length>=SUBJECTS.length) used=[];
+  let i; do{i=Math.floor(Math.random()*SUBJECTS.length);}while(used.includes(i));
+  used.push(i); return SUBJECTS[i];
+}
+
+function setSl(p,pct){
+  pct=Math.max(0,Math.min(100,pct));
+  if(p===1){v1=pct;$('fill1').style.width=pct+'%';$('thumb1').style.left=pct+'%';}
+  else     {v2=pct;$('fill2').style.width=pct+'%';$('thumb2').style.left=pct+'%';}
+}
+
+function startRound(){
+  const s=pick();
+  $('subject').textContent=s.text;
+  $('ext-l').textContent=s.left;
+  $('ext-r').textContent=s.right;
+  $('round-num').textContent=round;
+
+  v1=50;v2=50;phase=1;
+  setSl(1,50);setSl(2,50);
+
+  $('track1').classList.remove('disabled');
+  $('track2').classList.add('disabled');
+  $('thumb1').style.opacity='1';
+  $('fill1').style.opacity='1';
+  $('thumb2').style.opacity='.35';
+  $('fill2').style.opacity='1';
+  $('lb1').classList.remove('show');
+  $('lb2').classList.remove('show');
+
+  $('arena').style.display='flex';
+  $('reveal-screen').classList.remove('show');
+  $('phase-label').textContent='● Joueur 1 — glisse et verrouille';
+  $('btn-lock').textContent='Verrouiller P1';
+  $('btn-lock').style.display='';
+  $('btn-next').classList.remove('show');
+}
+
+function lockPhase(){
+  if(phase===1){
+    $('lb1').classList.add('show');
+    $('track1').classList.add('disabled');
+    $('thumb1').style.opacity='0';
+    $('fill1').style.opacity='0';
+    $('track2').classList.remove('disabled');
+    $('thumb2').style.opacity='1';
+    phase=2;
+    $('phase-label').textContent='● Joueur 2 — glisse et verrouille';
+    $('btn-lock').textContent='Verrouiller P2';
+  } else if(phase===2){
+    $('lb2').classList.add('show');
+    $('track2').classList.add('disabled');
+    $('thumb2').style.opacity='0';
+    $('fill2').style.opacity='0';
+    phase=3;
+    doReveal();
+  }
+}
+
+function doReveal(){
+  $('arena').style.display='none';
+  $('btn-lock').style.display='none';
+  $('btn-next').classList.add('show');
+  $('phase-label').textContent='';
+
+  const diff=Math.abs(v1-v2);
+  let pts,emoji,msg,color;
+  if(diff<=3)       {pts=5;emoji='🔥';msg='Parfaite synchronisation !';color='#f0c060';}
+  else if(diff<=8)  {pts=4;emoji='✨';msg='Presque parfaits !';color='#c8e89a';}
+  else if(diff<=16) {pts=3;emoji='💚';msg='Bien synchronisés !';color='#7aaf50';}
+  else if(diff<=28) {pts=2;emoji='🙂';msg='Pas mal du tout';color='#5a88d8';}
+  else              {pts=1;emoji='😅';msg='Vous êtes différents';color='rgba(255,255,255,.4)';}
+
+  sP1+=pts; sP2+=pts;
+  $('sp1').textContent=sP1;
+  $('sp2').textContent=sP2;
+
+  $('cmp-p1').style.left=v1+'%';
+  $('cmp-p2').style.left=v2+'%';
+  const mn=Math.min(v1,v2),mx=Math.max(v1,v2);
+  $('cmp-gap').style.left=mn+'%';
+  $('cmp-gap').style.width=(mx-mn)+'%';
+  $('cmp-pct').style.left=((v1+v2)/2)+'%';
+  $('cmp-pct').textContent=Math.round(diff)+'%';
+
+  $('result-emoji').textContent=emoji;
+  $('result-text').textContent=msg;
+  $('result-pts').textContent='+'+pts+' pts chacun';
+  $('result-pts').style.cssText='font-size:clamp(15px,4vw,18px);font-weight:600;padding:6px 18px;border-radius:100px;margin-top:4px;background:'+color+'22;color:'+color+';border:1px solid '+color+'55';
+  $('result-sub').textContent='P1 : '+Math.round(v1)+'%   ·   P2 : '+Math.round(v2)+'%   ·   Écart : '+Math.round(diff)+'%';
+  $('reveal-screen').classList.add('show');
+}
+
+function nextRound(){
+  if(round>=MAX){showFinal();return;}
+  round++;
+  startRound();
+}
+
+function showFinal(){
+  $('fp1').textContent=sP1;
+  $('fp2').textContent=sP2;
+  const max=MAX*5;
+  let msg;
+  if(sP1===sP2) msg='Parfaitement synchronisés ♡ ('+sP1+' pts / '+max+' max)';
+  else if(sP1>sP2) msg='Joueur 1 a mieux senti l\'ambiance ! ('+sP1+' vs '+sP2+' pts)';
+  else msg='Joueur 2 a mieux senti l\'ambiance ! ('+sP2+' vs '+sP1+' pts)';
+  $('winner-msg').textContent=msg;
+  $('score-screen').classList.add('show');
+}
+
+function restartGame(){
+  sP1=0;sP2=0;round=1;used=[];
+  $('sp1').textContent='0';$('sp2').textContent='0';
+  $('score-screen').classList.remove('show');
+  startRound();
+}
+
+function pct(e,el){
+  const r=el.getBoundingClientRect();
+  const s=e.touches?e.touches[0]:e;
+  return Math.max(0,Math.min(100,(s.clientX-r.left)/r.width*100));
+}
+function startDrag(e,p){
+  if(p===1&&phase!==1) return;
+  if(p===2&&phase!==2) return;
+  dragging=p;
+  $('thumb'+p).classList.add('grab');
+  if(e.cancelable) e.preventDefault();
+  onMove(e);
+}
+function onMove(e){
+  if(!dragging) return;
+  if(e.cancelable) e.preventDefault();
+  setSl(dragging,pct(e,$('track'+dragging)));
+}
+function endDrag(){
+  if(dragging) $('thumb'+dragging).classList.remove('grab');
+  dragging=null;
+}
+
+$('track1').addEventListener('mousedown',e=>startDrag(e,1));
+$('track1').addEventListener('touchstart',e=>startDrag(e,1),{passive:false});
+$('track2').addEventListener('mousedown',e=>startDrag(e,2));
+$('track2').addEventListener('touchstart',e=>startDrag(e,2),{passive:false});
+document.addEventListener('mousemove',onMove);
+document.addEventListener('touchmove',onMove,{passive:false});
+document.addEventListener('mouseup',endDrag);
+document.addEventListener('touchend',endDrag);
+
+startRound();
+</script>
+</body>
+</html>
